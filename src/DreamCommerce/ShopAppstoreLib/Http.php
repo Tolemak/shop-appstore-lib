@@ -30,10 +30,11 @@ class Http implements HttpInterface
      * Singleton
      * @return Http
      */
-    public static function instance(){
+    public static function instance()
+    {
         static $instance = null;
 
-        if($instance===null){
+        if ($instance === null) {
             $instance = new Http();
         }
 
@@ -45,9 +46,10 @@ class Http implements HttpInterface
      * @param int $num
      * @throws HttpException
      */
-    public static function setRetryLimit($num){
-        if($num<1){
-            throw new HttpException('Limit '.(int)$num.' is too low', HttpException::LIMIT_TOO_LOW);
+    public static function setRetryLimit($num)
+    {
+        if ($num < 1) {
+            throw new HttpException('Limit ' . (int)$num . ' is too low', HttpException::LIMIT_TOO_LOW);
         }
 
         self::$retryLimit = $num;
@@ -132,9 +134,12 @@ class Http implements HttpInterface
             $logger->debug('NEW REQUEST: ' . $methodName . ' ' . $processedUrl);
 
             if (!in_array($methodName, array(
-                'GET', 'POST', 'PUT', 'DELETE', 'HEAD'
-            ))
-            ) {
+                'GET',
+                'POST',
+                'PUT',
+                'DELETE',
+                'HEAD'
+            ))) {
                 throw new \Exception('Method not supported', HttpException::METHOD_NOT_SUPPORTED);
             }
 
@@ -143,19 +148,20 @@ class Http implements HttpInterface
                 'http' => array(
                     'method' => $methodName,
                     'ignore_errors' => true   // we want to catch output although the error
-                ));
+                )
+            );
 
             // skip SSL verification
-            if($this->skipSsl){
+            if ($this->skipSsl) {
                 $contextParams['ssl'] = array(
-                    'verify_peer'=>false,
-                    'verify_peer_name'=>false
+                    'verify_peer' => false,
+                    'verify_peer_name' => false
                 );
             }
 
             // inject request parameters
             $this->applyHeaders($contextParams, $headers);
-            $json = !empty($headers['Content-Type']) && $headers['Content-Type']=='application/json';
+            $json = !empty($headers['Content-Type']) && $headers['Content-Type'] == 'application/json';
             $this->applyBody($contextParams, $methodName, $body, $json);
 
             // make request stream context
@@ -206,28 +212,37 @@ class Http implements HttpInterface
                     if (!$parsedPayload && !is_array($parsedPayload)) {
                         throw new \Exception('Result is not a valid JSON', HttpException::MALFORMED_RESULT);
                     }
-
                 } else {
                     $parsedPayload = $response;
                 }
 
                 $logger->debug('Response body (decoded): ' . var_export($parsedPayload, true));
             }
-        }catch(\Exception $ex){
+        } catch (\Exception $ex) {
 
             $message = $ex->getMessage();
 
             $logger->error(
-                $ex->getMessage(), compact('method', 'url', 'query', 'headers', 'body', 'responseHeaders', 'response')
+                $ex->getMessage(),
+                compact('method', 'url', 'query', 'headers', 'body', 'responseHeaders', 'response')
             );
 
-            if($ex instanceof HttpException){
+            if ($ex instanceof HttpException) {
                 $response = $ex->getResponse();
                 $message = $ex->getMessage();
             }
 
             throw new HttpException(
-                $message, $ex->getCode(), null, $method, $url, $headers, $query, $body, $response, $responseHeaders
+                $message,
+                $ex->getCode(),
+                null,
+                $method,
+                $url,
+                $headers,
+                $query,
+                $body,
+                $response,
+                $responseHeaders
             );
         }
 
@@ -239,11 +254,11 @@ class Http implements HttpInterface
 
     protected function applyHeaders(&$contextParams, $headers)
     {
-        if(!isset($headers['Content-Type'])) {
+        if (!isset($headers['Content-Type'])) {
             $headers['Content-Type'] = 'application/json';
         }
 
-        if(!isset($headers['Accept-Encoding'])) {
+        if (!isset($headers['Accept-Encoding'])) {
             $headers['Accept-Encoding'] = 'gzip';
         }
 
@@ -254,7 +269,7 @@ class Http implements HttpInterface
         $contextParams['http']['header'] = $headersString;
 
 
-        $this->getLogger()->debug('Headers: '.var_export($headers, true));
+        $this->getLogger()->debug('Headers: ' . var_export($headers, true));
     }
 
     /**
@@ -272,10 +287,10 @@ class Http implements HttpInterface
             $row = explode(':', $i, 2);
 
             // header with no key/value - HTTP response, get code and status
-            if(!isset($row[1])){
+            if (!isset($row[1])) {
 
                 $matches = array();
-                if(preg_match('#HTTP/[1-2]\.[0-1] ([0-9]{3})(.*)#si', $row[0], $matches)){
+                if (preg_match('#HTTP/[1-2]\.[0-1] ([0-9]{3})(.*)#si', $row[0], $matches)) {
                     $headers['Code'] = $matches[1];
                     $headers['Status'] = trim($matches[2]);
                 }
@@ -304,7 +319,7 @@ class Http implements HttpInterface
      */
     public function getLogger()
     {
-        if($this->logger === null) {
+        if ($this->logger === null) {
             $this->logger = new Logger();
         }
 
@@ -325,20 +340,20 @@ class Http implements HttpInterface
 
             $body = (array)$body;
 
-            if($json){
+            if ($json) {
                 $content = @json_encode($body);
-                if(!$content){
+                if (!$content) {
                     throw new \Exception('Body is not serializable');
                 }
-            }else{
+            } else {
                 $content = http_build_query($body);
             }
 
             $contextParams['http']['content'] = $content;
 
             $logger = $this->getLogger();
-            $logger->debug('Document body: '.var_export($body, true));
-            $logger->debug('Document body (JSON-ified): '.$content);
+            $logger->debug('Document body: ' . var_export($body, true));
+            $logger->debug('Document body (JSON-ified): ' . $content);
         }
     }
 
@@ -378,9 +393,10 @@ class Http implements HttpInterface
      * @return mixed|string
      * @throws \Exception
      */
-    protected function doRequest($url, $ctx, &$responseHeaders, $methodName) {
+    protected function doRequest($url, $ctx, &$responseHeaders, $methodName)
+    {
         // make a real request
-        $result = @file_get_contents($url, null, $ctx);
+        $result = @file_get_contents(filename:$url, context:$ctx);
         if (!$result) {
             throw new \Exception('HTTP request failed', HttpException::REQUEST_FAILED);
         }
@@ -438,5 +454,4 @@ class Http implements HttpInterface
 
         return $result;
     }
-
 }
